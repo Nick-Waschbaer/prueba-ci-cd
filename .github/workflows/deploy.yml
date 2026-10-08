@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+# Permisos necesarios para desplegar en GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Permitir un solo despliegue concurrente
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Verificar archivos requeridos (index.html y script.js)
+        run: |
+          if [ ! -f "index.html" ]; then
+            echo "::error::El archivo index.html no fue encontrado."
+            exit 1
+          fi
+          if [ ! -f "script.js" ]; then
+            echo "::error::El archivo script.js no fue encontrado."
+            exit 1
+          fi
+          echo "Verificación exitosa: index.html y script.js existen."
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
